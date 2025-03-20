@@ -26,4 +26,5 @@
 ![主界面](https://gitee.com/StrayMeteor3337/strayImg/raw/master/wrf.jpg)
 
 # 其他:
-软件使用的微信ipad协议的实现不是我编写的,**我也没有协议的源代码**,因此使用的是已编译的版本,那个协议还有很多其他功能,可以访问swaggerUI尝试一下
+软件使用的微信ipad协议的实现不是我编写的,**我也没有协议的源代码**,因此使用的是已编译的版本,那个协议还有很多其他功能,releases里面下载WechatProtocol_849.zip完整版协议
+,可以访问swaggerUI尝试一下
