@@ -7,6 +7,7 @@
 # 功能:
 
 **快速检测你的微信有没有单向好友,并自动将其添加到标签中(之后可在电脑端一键清除这些人),理论上可以支持检测上万的好友**
+> PS:本软件不会打扰到好友,好友不会收到任何提示
 
 # 使用指南:
 - 在releases中下载最新构建版本 [点击跳转到releases页面](https://github.com/StrayMeteor3337/WechatRealFriends/releases/)
