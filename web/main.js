@@ -1,4 +1,4 @@
-//WechatRealFriends By StrayMeteor3337
+//WechatRealFriends By StrayMeteor3337,ZogeMung
 // 错误提示函数
 function onError(msg) {
     layer.msg(msg, {icon: 2}, function () {
@@ -66,6 +66,7 @@ async function GetContractList(wxid, seq = 0) {
                 throw new Error("获取好友列表失败，请检查网络连接");
             }
 
+            //Thanks for ZogeMung@github
             const notFriends = ["gh", "chatroom", "weixin", "filehelper", "qqmail", "weibo", "floatbottle", "medianote", "message"];
             const data = await response.json();
             const contractList = data["Data"]["ContactUsernameList"].filter(item => notFriends.every(notFriend => !item.includes(notFriend))); 
