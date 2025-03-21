@@ -66,8 +66,9 @@ async function GetContractList(wxid, seq = 0) {
                 throw new Error("获取好友列表失败，请检查网络连接");
             }
 
+            const notFriends = ["gh", "chatroom", "weixin", "filehelper", "qqmail", "weibo", "floatbottle", "medianote", "message"];
             const data = await response.json();
-            const contractList = data["Data"]["ContactUsernameList"].filter(item => item.startsWith("wxid"));
+            const contractList = data["Data"]["ContactUsernameList"].filter(item => notFriends.every(notFriend => !item.includes(notFriend))); 
 
             // 更新好友列表和 UI
             window.friends = window.friends.concat(contractList);
