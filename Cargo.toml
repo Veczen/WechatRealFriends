@@ -1,0 +1,10 @@
+[package]
+name = "wrf-rust"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+webbrowser = "0.5.2"
+ctrlc = "3.2.1"
+tiny_http = "0.6.0"
+mime_guess = "2.0.3"
