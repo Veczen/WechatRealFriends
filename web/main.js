@@ -1,7 +1,7 @@
 //WechatRealFriends By StrayMeteor3337,ZogeMung
 // 错误提示函数
 function onError(msg) {
-    layer.msg(msg, {icon: 2}, function () {
+    layer.msg(msg, { icon: 2 }, function () {
     });
 }
 
@@ -67,9 +67,9 @@ async function GetContractList(wxid, seq = 0) {
             }
 
             //Thanks for ZogeMung@github
-            const notFriends = ["gh", "chatroom", "weixin", "filehelper", "qqmail", "weibo", "floatbottle", "medianote", "message"];
+            const notFriends = ["gh_", "@chatroom", "weixin", "filehelper", "qqmail", "weibo", "floatbottle", "medianote", "message"];
             const data = await response.json();
-            const contractList = data["Data"]["ContactUsernameList"].filter(item => notFriends.every(notFriend => !item.includes(notFriend))); 
+            const contractList = data["Data"]["ContactUsernameList"].filter(item => notFriends.every(notFriend => !item.includes(notFriend)));
 
             // 更新好友列表和 UI
             window.friends = window.friends.concat(contractList);
@@ -128,16 +128,28 @@ async function checkRelation(wxid) {
                     const relation = data["Data"]["FriendRelation"];
                     switch (relation) {
                         case 1: // 被删除
-                            window.deleteYou.push(userName);
-                            document.getElementById("numOfDeleteYou").innerText = window.deleteYou.length.toString();
+                            getOriginalLabelId(wxid, userName).then(labelID => {
+                                const userDeleted = {
+                                    userName: userName,
+                                    originalLabelId: labelID
+                                }
+                                window.deleteYou.push(userDeleted);
+                                document.getElementById("numOfDeleteYou").innerText = window.deleteYou.length.toString();
+                            });
                             break;
                         case 4: // 被我拉黑的
                             window.blackListedByYou.push(userName);
                             document.getElementById("numOfBlackListedByYou").innerText = window.blackListedByYou.length.toString();
                             break;
                         case 5: // 拉黑我的
-                            window.blackListYou.push(userName);
-                            document.getElementById("numOfBlackListYou").innerText = window.blackListYou.length.toString();
+                            getOriginalLabelId(wxid, userName).then(labelID => {
+                                const userBlackListYou = {
+                                    userName: userName,
+                                    originalLabelId: labelID
+                                }
+                                window.blackListYou.push(userBlackListYou);
+                                document.getElementById("numOfBlackListYou").innerText = window.blackListYou.length.toString();
+                            });
                             break;
                     }
                     progress++;
@@ -170,7 +182,33 @@ async function checkRelation(wxid) {
     }
 }
 
-async function AddLabelDeleted(wxid){
+// 获取好友标签列表
+async function getOriginalLabelId(wxid, towxids, chatroom = "") {
+    dataGetContractDetail.Wxid = wxid;
+    dataGetContractDetail.ToWxids = towxids;
+    dataGetContractDetail.Chatroom = chatroom;
+
+    const response = await fetch(ApiGetContractDetail, {
+        method: 'POST',
+        headers: {
+            'accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dataGetContractDetail)
+    })
+    if (!response.ok) {
+        onError("获取好友标签失败，请检查网络连接");
+    }
+    try {
+        const responseData = await response.json();
+        return responseData["Data"]["ContactList"][0]["LabelIdlist"];
+    } catch (error) {
+        onError("获取好友标签失败，请重试" + error.toString());
+    }
+}
+
+
+async function AddLabelDeleted(wxid) {
     dataAddLabel.LabelName = "#删除我的人";
     dataAddLabel.Wxid = wxid;
     const response = await fetch(ApiAddLabel, {
@@ -187,12 +225,12 @@ async function AddLabelDeleted(wxid){
     try {
         const responseData = await response.json();
         return responseData["Data"]["LabelPairList"]["labelID"];
-    } catch (error){
-        onError("添加标签时失败,请重试(但不要刷新页面): "+error.toString());
+    } catch (error) {
+        onError("添加标签时失败,请重试(但不要刷新页面): " + error.toString());
     }
 }
 
-async function AddLabelBlackListed(wxid){
+async function AddLabelBlackListed(wxid) {
     dataAddLabel.LabelName = "#拉黑我的人";
     dataAddLabel.Wxid = wxid;
     const response = await fetch(ApiAddLabel, {
@@ -209,45 +247,51 @@ async function AddLabelBlackListed(wxid){
     try {
         const responseData = await response.json();
         return responseData["Data"]["LabelPairList"]["labelID"];
-    } catch (error){
-        onError("添加标签时失败,请重试(但不要刷新页面): "+error.toString());
+    } catch (error) {
+        onError("添加标签时失败,请重试(但不要刷新页面): " + error.toString());
     }
 }
 
-async function setLabelForAbnormalFriends(wxid,LabelID1,LabelID2) {
+async function setLabelForAbnormalFriends(wxid, LabelID1, LabelID2) {
     //所有标号为1的变量均为添加联系人到 #删除我的人
     //所有标号为2的变量均为添加联系人到 #拉黑我的人
     const dataUpdateLabel1 = Object.assign({}, dataUpdateLabel);
     const dataUpdateLabel2 = Object.assign({}, dataUpdateLabel);
 
-    dataUpdateLabel1.LabelID = LabelID1.toString();
-    dataUpdateLabel1.Wxid = wxid;
-    dataUpdateLabel1.ToWxids = window.deleteYou.join(",")
-    const response1 = await fetch(ApiUpdateLabel, {
-        method: 'POST',
-        headers: {
-            'accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(dataUpdateLabel1)
-    });
-    if (!response1.ok) {
-        onError("向标签中添加异常好友时失败,请重试(但不要刷新页面)");
+    for (let deleteYou of window.deleteYou) {
+        const newLabelID = [deleteYou.originalLabelId, LabelID1];
+        dataUpdateLabel1.LabelID = newLabelID.filter(item => item !== null && item !== undefined).join(",").toString();
+        dataUpdateLabel1.Wxid = wxid;
+        dataUpdateLabel1.ToWxids = deleteYou.userName;
+        const response1 = await fetch(ApiUpdateLabel, {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dataUpdateLabel1)
+        });
+        if (!response1.ok) {
+            onError("向标签中添加异常好友时失败,请重试(但不要刷新页面)");
+        }
     }
 
-    dataUpdateLabel2.LabelID = LabelID2.toString();
-    dataUpdateLabel2.Wxid = wxid;
-    dataUpdateLabel2.ToWxids = window.blackListYou.join(",")
-    const response2 = await fetch(ApiUpdateLabel, {
-        method: 'POST',
-        headers: {
-            'accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(dataUpdateLabel2)
-    });
-    if (!response2.ok) {
-        onError("向标签中添加异常好友时失败,请重试(但不要刷新页面)");
+    for (let blackListYou of window.blackListYou) {
+        const newLabelID = [blackListYou.originalLabelId, LabelID2];
+        dataUpdateLabel2.LabelID = newLabelID.filter(item => item !== null && item !== undefined).join(",").toString();
+        dataUpdateLabel2.Wxid = wxid;
+        dataUpdateLabel2.ToWxids = blackListYou.userName;
+        const response2 = await fetch(ApiUpdateLabel, {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dataUpdateLabel2)
+        });
+        if (!response2.ok) {
+            onError("向标签中添加异常好友时失败,请重试(但不要刷新页面)");
+        }
     }
 }
 
@@ -260,12 +304,12 @@ async function setLabelConfirm(wxid) {
         that.loading(true);
         const LabelIDDeleted = await AddLabelDeleted(wxid);// 创建标签“#删除我的人”
         const LabelIDBlackListed = await AddLabelBlackListed(wxid);// 创建标签“#拉黑我的人”
-        setLabelForAbnormalFriends(wxid,LabelIDDeleted,LabelIDBlackListed).then(
+        setLabelForAbnormalFriends(wxid, LabelIDDeleted, LabelIDBlackListed).then(
             defer.resolve
         );
         layer.open({
             type: 1,
-            area: [0.75*(window.screen.width)+'px', 0.8*(window.screen.height)+'px'], // 宽高
+            area: [0.75 * (window.screen.width) + 'px', 0.8 * (window.screen.height) + 'px'], // 宽高
             content: `<div style="padding: 11px;">
 <p class="layui-font-20">大功告成! 您现在可以在微信电脑版客户端中一键删除异常好友</p>
 <p class="layui-font-20">记得在手机端退出登录"ipad微信"哦</p>

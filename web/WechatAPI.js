@@ -28,6 +28,13 @@ const dataGetRelation = {
     "Wxid": "string"//替换为对应微信号
 };
 
+const ApiGetContractDetail = url + "/Friend/GetContractDetail";
+const dataGetContractDetail = {
+    "ChatRoom": "string",//留空
+    "Towxids": "string",//替换为要检测与其关系的好友的微信号
+    "Wxid": "string"//替换为对应微信号
+};
+
 const ApiAddLabel = url + "/Label/Add";
 const dataAddLabel = {
     "LabelName": "string",
